@@ -1,0 +1,7 @@
+version: '3.10'
+services:
+    savebot:
+        image: kolyanbot
+        volumes:
+          - "/opt/docker/kolyanbot/sqlite:/app/sqlite"
+        restart: on-failure

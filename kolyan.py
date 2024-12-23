@@ -40,7 +40,7 @@ def check_reply(message : telebot.types.Message):
     user_id = message.from_user.id
     if user_id == kolyanId:
         return True
-    elif kolyanId == -1337
+    elif kolyanId == -1337:
         return True
     if message.text.startswith('/test') and check_admin(user_id):
         return True

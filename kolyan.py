@@ -10,11 +10,13 @@ def init_config(config_path : str):
     config = configparser.ConfigParser()
     config.read(config_path)
     botToken = config['DEFAULT']['BotToken']
+    shitRate = config['DEFAULT']['ShitRate']
     kolyanId = config['DEFAULT']['KolyanId']
-    DBPath = config['DEFAULT']['DBPath']
-    return botToken, int(kolyanId), DBPath
+    DBPath   = config['DEFAULT']['DBPath'  ]
+    gifID    = config['DEFAULT']['gifID'   ]
+    return botToken, float(shitRate), int(kolyanId), DBPath, gifID
 
-botToken, kolyanId, DBPath = init_config(defaultConfigPath)
+botToken, shitRate, kolyanId, DBPath, gifID = init_config(defaultConfigPath)
 
 db_connection = sqlite3.connect(DBPath, check_same_thread=False, isolation_level=None)
 lock = threading.Lock()
@@ -62,13 +64,21 @@ def random_msg(message : telebot.types.Message):
 ########################################    HANDLERS
 
 @kolyabot.message_handler(func=check_reply, content_types=['audio', 'photo', 'voice', 'video', 'document',
-                                                            'text', 'location', 'contact', 'sticker'])
+                                                            'text', 'location', 'contact', 'sticker', 'animation'])
 def reply_message(message : telebot.types.Message):
-    if not message.text:
+    if message.text:
+        ltext = message.text.lower()
+    elif message.caption:
+        ltext = message.caption.lower()
+    else:
+        ltext = ''
+    if not ltext:
         return
-    ltext = message.text.lower()
+    ########## GIF
+    if 'трейд' in ltext:
+        kolyabot.send_animation(message.chat.id, gifID,reply_to_message_id=message.message_id)
     ########## BAZA
-    if 'каля' in ltext:
+    elif 'каля' in ltext:
         random_msg(message)
     ########## REPLAY-TO-REPLAY-TO-BOT
     elif message.reply_to_message is not None and message.reply_to_message.from_user.id == kolyabot.get_me().id:
@@ -104,57 +114,15 @@ def reply_message(message : telebot.types.Message):
             print('refused ',user_id)
             kolyabot.reply_to(message, text='ТЫ КТО ВООБЩЕ ЭУ')
 
-'''
-@kolyabot.message_handler(commands=['test'])
-def add_reply(message : telebot.types.Message):
-    if check_admin(message.from_user.id):
-        randomReply = random_msg()
-        kolyabot.reply_to(message, text=randomReply)
-
-@kolyabot.message_handler(commands=['add'])
-def add_reply(message : telebot.types.Message):
-    if check_admin(message.from_user.id):
-        user_id = message.from_user.id
-        text = message.text[4:].strip()
-        try:
-            with lock:
-                cursor.execute('INSERT INTO reply_messages(submitted_by, message_text) VALUES (?, ?)', [user_id, text])
-        except sqlite3.IntegrityError as e:
-            kolyabot.reply_to(message, 'Не добавил ебать ты че')
-        else:
-            kolyabot.reply_to(message, 'Базар жок')
-
-@kolyabot.message_handler(commands=['grant'])
-def add_admin(message : telebot.types.Message):
-    print('request for admin:',message.from_user.full_name)
-    user_id = message.from_user.id
-    if 'POTNOFMOB' in message.text:
-        print('granted ',user_id)
-        try:
-            with lock:
-                cursor.execute('INSERT INTO admins(id) VALUES (?)', [user_id])
-        except sqlite3.IntegrityError as e:
-            print('already added ',user_id)
-        kolyabot.reply_to(message, text='ДОБАВИЛ ЖОК')
-    else:
-        print('refused ',user_id)
-        kolyabot.reply_to(message, text='ТЫ КТО ВООБЩЕ ЭУ')
-'''
-'''
-@kolyabot.message_handler(commands=['showall'])
-def show_all(message : telebot.types.Message):
-    if check_admin(message.from_user.id):
-        mlist = []
-        with lock:
-            cursor.execute("SELECT message_text FROM reply_messages")
-            for msg in list(cursor):
-                mlist.append(msg[0])
-        kolyabot.reply_to(message, "\n".join(mlist))
-'''
-
 def main():
     init_db()
-    kolyabot.infinity_polling()
+    #while True:
+    if True:
+        #try:
+            kolyabot.infinity_polling(timeout=60, long_polling_timeout=60, none_stop=True)
+        #except Exception as e:
+        #    print(f"TeleBot: Infinity polling exception: {e}")
+        #    time.sleep(1000)
 
 if __name__ == '__main__':
     main()

@@ -47,7 +47,7 @@ def check_reply(message : telebot.types.Message):
         return True
     elif kolyanId == -1337:
         return True
-    if message.text.startswith('/test') and check_admin(user_id):
+    if check_admin(user_id) and message.text and message.text.startswith('/test'):
         return True
     return False
 
